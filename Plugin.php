@@ -22,7 +22,7 @@ class PostToSinaToutiao_Plugin implements Typecho_Plugin_Interface
     {
 		Typecho_Plugin::factory('Widget_Contents_Post_Edit')->finishPublish = array('PostToSinaToutiao_Plugin', 'justdoit');
 		Typecho_Plugin::factory('Widget_Contents_Page_Edit')->finishPublish = array('PostToSinaToutiao_Plugin', 'justdoit');
-		return _t('欢迎使用！！');
+		return _t('欢迎使用！！第一次使用请查看<a href="https://www.jysafe.cn/3226.air">食用方法</a>');
     }
     
     /**
@@ -45,17 +45,17 @@ class PostToSinaToutiao_Plugin implements Typecho_Plugin_Interface
     public static function config(Typecho_Widget_Helper_Form $form)
     {
    
-		$debug = new Typecho_Widget_Helper_Form_Element_Text('debug', null, '', _t('是否启用日志'), '0或空不开，其它开');
+		$debug = new Typecho_Widget_Helper_Form_Element_Text('debug', null, '', _t('<a href="https://www.jysafe.cn/3226.air">食用方法</a><br />是否启用日志'), '0或空不开，其它开');
 		$form->addInput($debug);
-		$defaultimg = new Typecho_Widget_Helper_Form_Element_Text('defaultimg', null, 'https://www.jysafe.cn/assets/images/LOGO.png', _t('默认封面'), '默认封面');
+		$defaultimg = new Typecho_Widget_Helper_Form_Element_Text('defaultimg', null, 'https://www.jysafe.cn/assets/images/LOGO.png', _t('头条文章默认封面'), '文章无图时显示的封面');
 		$form->addInput($defaultimg);
 		$AppKey = new Typecho_Widget_Helper_Form_Element_Text('AppKey', null, '', _t('App Key'), '<a href="http://open.weibo.com" >微博开放平台</a>获取');
 		$form->addInput($AppKey);
 		$AppSecret = new Typecho_Widget_Helper_Form_Element_Text('AppSecret', null, '', _t('App Secret'), '<a href="http://open.weibo.com" >微博开放平台</a>获取');
 		$form->addInput($AppSecret);
-		$domain = new Typecho_Widget_Helper_Form_Element_Text('domain', null, 'https://xxx.xxx', _t('您的域名'), '包含http(s)');
+		$domain = new Typecho_Widget_Helper_Form_Element_Text('domain', null, 'https://xxx.xxx', _t('您的域名'), '包含http(s)://');
 		$form->addInput($domain);
-		$access_token = new Typecho_Widget_Helper_Form_Element_Text('access_token', null, '', _t('access_token'), '获取：<br /><iframe src="/usr/plugins/PostToSinaToutiao/open-master/?'.''.'" width="100%"></iframe><br />'.readlog());
+		$access_token = new Typecho_Widget_Helper_Form_Element_Text('access_token', null, '', _t('Access_token（下面获取）'), '获取：<br /><iframe src="/usr/plugins/PostToSinaToutiao/open-master/?'.''.'" width="100%"></iframe><br />'.readlog());
 		$form->addInput($access_token);
     }
     /**
