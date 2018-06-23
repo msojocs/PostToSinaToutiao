@@ -5,7 +5,7 @@ if (!defined('__TYPECHO_ROOT_DIR__')) exit;
  * 
  * @package PostToSinaToutiao
  * @author 祭夜
- * @version 1.0 test
+ * @version 1.0.0
  * @link https://www.jysafe.cn
  */
  
