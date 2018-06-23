@@ -5,7 +5,7 @@ if (!defined('__TYPECHO_ROOT_DIR__')) exit;
  * 
  * @package PostToSinaToutiao
  * @author 祭夜
- * @version 1.0.1
+ * @version 1.0.2
  * @link https://www.jysafe.cn
  */
  
@@ -78,7 +78,8 @@ class PostToSinaToutiao_Plugin implements Typecho_Plugin_Interface
      */
 	public static function justdoit($contents, $class)
     {
-        //logInfo(json_encode($contents));
+        logInfo($contents['text']);
+        logInfo(content($contents['text']));
         
 		//如果文章属性为隐藏或滞后发布改良版,加入创建时间和修改时间不一致则返回不执行
 		if( 'publish' != $contents['visibility'] || $contents['created'] > $contents['modified']){
@@ -98,7 +99,7 @@ class PostToSinaToutiao_Plugin implements Typecho_Plugin_Interface
 /*****************************************/
 function post_to_sina_weibo_toutiao($content,$classa) {
     
-    $get_post_centent = $content['text'];  //文章内容
+    $get_post_centent = content($content['text']);  //文章内容
     $get_post_title = $content['title'];  //文章标题
     
     
@@ -184,4 +185,39 @@ function readlog(){
         fclose($file);
     }
         
+}
+
+function content($content){
+    $content = '##############">'.preg_replace("/!\[(.*)\]\[\d\]/U",'<img src="**************##############">',$content).'<img src="**************';//正则替换
+    $str = preg_replace("/\s+\r/is", "\n", $content);//回车符是\r  
+    $str = preg_replace("/\s+\r\n/is", "\n", $str);//回车符是\r\n  
+    $str = preg_replace("/\s+\n/is", "\n", $str);//回车符是\n  
+    $content = str_replace("\n",'<br />',$str);  
+    preg_match_all ('/##############(.*)(\*\*\*\*\*\*\*\*\*\*\*\*\*\*)/U', $content, $content1); //切割内容
+    $content1_counter = count($content1[0]); //内容计数器
+    
+    //切割图片链接
+    preg_match_all ("/\[\d\]:[ ](.*)(\/uploads)/U", $content, $thumbUrl1);  //通过正则式获取图片前地址
+    preg_match_all ("/\/usr(.*)(g)/U", $content, $thumbUrl2);  //通过正则式获取图片后地址
+    $img_counter = count($thumbUrl2[0]);  //一个图片地址地址的计数器
+    
+    //合成前后链接
+    for($i = 0;$i < $img_counter; $i++){
+        $thumbUrl[1][$i] = $thumbUrl1[1][$i].$thumbUrl2[1][$i].'g';
+    }
+    //切割结束
+    
+    //将内容与链接合成
+    $content = '';
+    for($i = 0;$i < $content1_counter; $i++){
+        if ($i == $content1_counter-1){
+            $content = $content.$content1[1][$i];
+        }else{
+            $content = $content.$content1[1][$i].$thumbUrl[1][$i];
+        }
+        
+    }
+    
+    preg_match_all ('/">(.*)(\[1\])/i', $content, $content);
+    return $content[1][0];
 }
