@@ -5,7 +5,7 @@ if (!defined('__TYPECHO_ROOT_DIR__')) exit;
  * 
  * @package PostToSinaToutiao
  * @author 祭夜
- * @version 1.0.0
+ * @version 1.0.1
  * @link https://www.jysafe.cn
  */
  
@@ -44,8 +44,9 @@ class PostToSinaToutiao_Plugin implements Typecho_Plugin_Interface
      */
     public static function config(Typecho_Widget_Helper_Form $form)
     {
-   
-		$debug = new Typecho_Widget_Helper_Form_Element_Text('debug', null, '', _t('<a href="https://www.jysafe.cn/3226.air">食用方法</a><br />是否启用日志'), '0或空不开，其它开');
+        
+		$debug = new Typecho_Widget_Helper_Form_Element_Text('debug', null, '', _t('<h2><a href="https://www.jysafe.cn/3226.air">----->食用方法</a></h2><br /><script type="text/javascript" src="//api.jysafe.cn/yy/?encode=js&charset=utf-8"></script>
+<div id="cqchitokoto"><script>cqchitokoto()</script></div><br />是否启用日志'), '0或空不开，其它开');
 		$form->addInput($debug);
 		$defaultimg = new Typecho_Widget_Helper_Form_Element_Text('defaultimg', null, 'https://www.jysafe.cn/assets/images/LOGO.png', _t('头条文章默认封面'), '文章无图时显示的封面');
 		$form->addInput($defaultimg);
