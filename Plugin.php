@@ -55,7 +55,7 @@ class PostToSinaToutiao_Plugin implements Typecho_Plugin_Interface
 		$form->addInput($AppSecret);
 		$domain = new Typecho_Widget_Helper_Form_Element_Text('domain', null, 'https://xxx.xxx', _t('您的域名'), '包含http(s)://');
 		$form->addInput($domain);
-		$access_token = new Typecho_Widget_Helper_Form_Element_Text('access_token', null, '', _t('Access_token（下面获取）'), '获取：<br /><iframe src="/usr/plugins/PostToSinaToutiao/open-master/?'.''.'" width="100%"></iframe><br />'.readlog());
+		$access_token = new Typecho_Widget_Helper_Form_Element_Text('access_token', null, '', _t('Access_token（下面获取,30天有效期）'), '获取：<br /><iframe src="/usr/plugins/PostToSinaToutiao/open-master/?'.''.'" width="100%"></iframe><br />'.readlog());
 		$form->addInput($access_token);
     }
     /**
