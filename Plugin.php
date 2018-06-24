@@ -45,17 +45,16 @@ class PostToSinaToutiao_Plugin implements Typecho_Plugin_Interface
     public static function config(Typecho_Widget_Helper_Form $form)
     {
         
-		$debug = new Typecho_Widget_Helper_Form_Element_Text('debug', null, '', _t('<h2><a href="https://www.jysafe.cn/3226.air">----->食用方法</a>||||<a href="https://github.com/jiyeme/PostToSinaToutiao">查看Github</a></h2><br /><script type="text/javascript" src="//api.jysafe.cn/yy/?encode=js&charset=utf-8"></script>
-<div id="cqchitokoto"><script defer>cqchitokoto()</script></div><br />是否启用日志'), '0或空不开，其它开');
+		$debug = new Typecho_Widget_Helper_Form_Element_Text('debug', null, '', _t('<h2><a href="https://www.jysafe.cn/3226.air">----->食用方法</a>||||<a href="https://github.com/jiyeme/PostToSinaToutiao">查看Github</a></h2><br /><script type="text/javascript" src="//api.jysafe.cn/yy/?encode=js&charset=utf-8"></script><div id="cqchitokoto"><script defer>cqchitokoto()</script></div><br />是否启用日志'), '0或空不开，其它开');
 		$form->addInput($debug);
 		$defaultimg = new Typecho_Widget_Helper_Form_Element_Text('defaultimg', null, 'https://www.jysafe.cn/assets/images/LOGO.png', _t('头条文章默认封面'), '文章无图时显示的封面');
 		$form->addInput($defaultimg);
-		$AppKey = new Typecho_Widget_Helper_Form_Element_Text('AppKey', null, '', _t('App Key'), '<a href="http://open.weibo.com" >微博开放平台</a>获取');
-		$form->addInput($AppKey);
-		$SinaAccount = new Typecho_Widget_Helper_Form_Element_Text('SinaAccount', null, '', _t('新浪微博账号'), '新浪微博账号');
-		$form->addInput($SinaAccount);
-		$SinaPsw = new Typecho_Widget_Helper_Form_Element_Text('SinaPsw', null, '', _t('新浪微博密码'), '日志：<br />'.readlog());
-		$form->addInput($SinaPsw);
+		$appkey = new Typecho_Widget_Helper_Form_Element_Text('appkey', null, '', _t('App Key'), '<a href="http://open.weibo.com" >微博开放平台</a>获取');
+		$form->addInput($appkey);
+		$sinaaccount = new Typecho_Widget_Helper_Form_Element_Text('sinaaccount', null, '', _t('新浪微博账号'), '新浪微博账号');
+		$form->addInput($sinaaccount);
+		$sinapsw = new Typecho_Widget_Helper_Form_Element_Text('sinapsw', null, '', _t('新浪微博密码'), '日志：<br />'.readlog());
+		$form->addInput($sinapsw);
     }
     /**
      * 个人用户的配置面板
@@ -82,7 +81,7 @@ class PostToSinaToutiao_Plugin implements Typecho_Plugin_Interface
             return;
         }
 		//必填项如果没填的话直接停止
-		if( is_null(Typecho_Widget::widget('Widget_Options')->plugin('PostToSinaToutiao')->AppKey) || is_null(Typecho_Widget::widget('Widget_Options')->plugin('PostToSinaToutiao')->SinaAccount) || is_null(Typecho_Widget::widget('Widget_Options')->plugin('PostToSinaToutiao')->SinaPsw)){
+		if( is_null(Typecho_Widget::widget('Widget_Options')->plugin('PostToSinaToutiao')->appkey) || is_null(Typecho_Widget::widget('Widget_Options')->plugin('PostToSinaToutiao')->sinaaccount) || is_null(Typecho_Widget::widget('Widget_Options')->plugin('PostToSinaToutiao')->sinapsw)){
             return;
         }
 		
@@ -103,9 +102,9 @@ function post_to_sina_weibo_toutiao($content,$classa) {
     require 'EasyHttp/Streams.php';
     
     $request = new EasyHttp();
-    $appkey = Typecho_Widget::widget('Widget_Options')->plugin('PostToSinaToutiao')->AppKey;          //key
-    $username = Typecho_Widget::widget('Widget_Options')->plugin('PostToSinaToutiao')->SinaAccount;        //用户名
-    $userpassword = Typecho_Widget::widget('Widget_Options')->plugin('PostToSinaToutiao')->SinaPsw;    //密码
+    $appkey = Typecho_Widget::widget('Widget_Options')->plugin('PostToSinaToutiao')->appkey;          //key
+    $username = Typecho_Widget::widget('Widget_Options')->plugin('PostToSinaToutiao')->sinaaccount;        //用户名
+    $userpassword = Typecho_Widget::widget('Widget_Options')->plugin('PostToSinaToutiao')->sinapsw;    //密码
     
     
     $get_post_centent = content($content['text']);  //文章内容
