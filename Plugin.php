@@ -5,7 +5,7 @@ if (!defined('__TYPECHO_ROOT_DIR__')) exit;
  * 
  * @package PostToSinaToutiao
  * @author 祭夜
- * @version 1.0.2
+ * @version 1.0.3
  * @link https://www.jysafe.cn
  */
  
@@ -46,18 +46,16 @@ class PostToSinaToutiao_Plugin implements Typecho_Plugin_Interface
     {
         
 		$debug = new Typecho_Widget_Helper_Form_Element_Text('debug', null, '', _t('<h2><a href="https://www.jysafe.cn/3226.air">----->食用方法</a>||||<a href="https://github.com/jiyeme/PostToSinaToutiao">查看Github</a></h2><br /><script type="text/javascript" src="//api.jysafe.cn/yy/?encode=js&charset=utf-8"></script>
-<div id="cqchitokoto"><script>cqchitokoto()</script></div><br />是否启用日志'), '0或空不开，其它开');
+<div id="cqchitokoto"><script defer>cqchitokoto()</script></div><br />是否启用日志'), '0或空不开，其它开');
 		$form->addInput($debug);
 		$defaultimg = new Typecho_Widget_Helper_Form_Element_Text('defaultimg', null, 'https://www.jysafe.cn/assets/images/LOGO.png', _t('头条文章默认封面'), '文章无图时显示的封面');
 		$form->addInput($defaultimg);
 		$AppKey = new Typecho_Widget_Helper_Form_Element_Text('AppKey', null, '', _t('App Key'), '<a href="http://open.weibo.com" >微博开放平台</a>获取');
 		$form->addInput($AppKey);
-		$AppSecret = new Typecho_Widget_Helper_Form_Element_Text('AppSecret', null, '', _t('App Secret'), '<a href="http://open.weibo.com" >微博开放平台</a>获取');
-		$form->addInput($AppSecret);
-		$domain = new Typecho_Widget_Helper_Form_Element_Text('domain', null, 'https://xxx.xxx', _t('您的域名'), '包含http(s)://');
-		$form->addInput($domain);
-		$access_token = new Typecho_Widget_Helper_Form_Element_Text('access_token', null, '', _t('Access_token（下面获取,30天有效期）'), '获取：<br /><iframe src="/usr/plugins/PostToSinaToutiao/open-master/?'.''.'" width="100%"></iframe><br />'.readlog());
-		$form->addInput($access_token);
+		$SinaAccount = new Typecho_Widget_Helper_Form_Element_Text('SinaAccount', null, '', _t('新浪微博账号'), '新浪微博账号');
+		$form->addInput($SinaAccount);
+		$SinaPsw = new Typecho_Widget_Helper_Form_Element_Text('SinaPsw', null, '', _t('新浪微博密码'), '日志：<br />'.readlog());
+		$form->addInput($SinaPsw);
     }
     /**
      * 个人用户的配置面板
@@ -68,8 +66,6 @@ class PostToSinaToutiao_Plugin implements Typecho_Plugin_Interface
      */
     public static function personalConfig(Typecho_Widget_Helper_Form $form){}
 	
-	
-	
     /**
      * 插件实现方法
      * 
@@ -78,15 +74,15 @@ class PostToSinaToutiao_Plugin implements Typecho_Plugin_Interface
      */
 	public static function justdoit($contents, $class)
     {
-        logInfo($contents['text']);
-        logInfo(content($contents['text']));
+        //logInfo($contents['text']);
+        //logInfo(content($contents['text']));
         
 		//如果文章属性为隐藏或滞后发布改良版,加入创建时间和修改时间不一致则返回不执行
 		if( 'publish' != $contents['visibility'] || $contents['created'] > $contents['modified']){
             return;
         }
 		//必填项如果没填的话直接停止
-		if( is_null(Typecho_Widget::widget('Widget_Options')->plugin('PostToSinaToutiao')->AppKey) || is_null(Typecho_Widget::widget('Widget_Options')->plugin('PostToSinaToutiao')->AppSecret) || is_null(Typecho_Widget::widget('Widget_Options')->plugin('PostToSinaToutiao')->access_token) || is_null(Typecho_Widget::widget('Widget_Options')->plugin('PostToSinaToutiao')->domain)){
+		if( is_null(Typecho_Widget::widget('Widget_Options')->plugin('PostToSinaToutiao')->AppKey) || is_null(Typecho_Widget::widget('Widget_Options')->plugin('PostToSinaToutiao')->SinaAccount) || is_null(Typecho_Widget::widget('Widget_Options')->plugin('PostToSinaToutiao')->SinaPsw)){
             return;
         }
 		
@@ -95,9 +91,22 @@ class PostToSinaToutiao_Plugin implements Typecho_Plugin_Interface
 		
     } 
 }
-
 /*****************************************/
 function post_to_sina_weibo_toutiao($content,$classa) {
+    
+    require 'EasyHttp.php';
+    require 'EasyHttp/Curl.php';
+    require 'EasyHttp/Cookie.php';
+    require 'EasyHttp/Encoding.php';
+    require 'EasyHttp/Fsockopen.php';
+    require 'EasyHttp/Proxy.php';
+    require 'EasyHttp/Streams.php';
+    
+    $request = new EasyHttp();
+    $appkey = Typecho_Widget::widget('Widget_Options')->plugin('PostToSinaToutiao')->AppKey;          //key
+    $username = Typecho_Widget::widget('Widget_Options')->plugin('PostToSinaToutiao')->SinaAccount;        //用户名
+    $userpassword = Typecho_Widget::widget('Widget_Options')->plugin('PostToSinaToutiao')->SinaPsw;    //密码
+    
     
     $get_post_centent = content($content['text']);  //文章内容
     $get_post_title = $content['title'];  //文章标题
@@ -117,31 +126,18 @@ function post_to_sina_weibo_toutiao($content,$classa) {
         'cover'   => $tupianurl,                 //头条的封面
         'summary' => mb_strimwidth(strip_tags($get_post_centent) , 0, 110, '...'),      //头条的导语
         'text'    => mb_strimwidth(strip_tags($get_post_centent) , 0, 110, $status).$tags.'原文地址:' . $classa->permalink,    //微博的内容
-        'access_token' => Typecho_Widget::widget('Widget_Options')->plugin('PostToSinaToutiao')->access_token
+        'source'  => $appkey
     ); 
-    
-    //请求
-    $ch = curl_init ();
-    curl_setopt ( $ch, CURLOPT_URL, $api_url );
-    curl_setopt ( $ch, CURLOPT_POST, 1 );
-    curl_setopt ( $ch, CURLOPT_HEADER, 0 );
-    curl_setopt ( $ch, CURLOPT_RETURNTRANSFER, 1 );
-    curl_setopt ( $ch, CURLOPT_POSTFIELDS, $body);
-    $ret = curl_exec ( $ch );
-    curl_close ( $ch );
-    //print_r($ret);
-    
-    //记录日志
-    logInfo($ret);
+    $headers = array('Authorization' => 'Basic ' . base64_encode("$username:$userpassword"));  
+    $result = $request->post($api_url, array('body' => $body,'headers' => $headers)); 
+    logInfo($result['body']);
 }
-
 //获取第一张图片
 function img_postthumb($content) {
  
 preg_match_all ("/\[1\]:(.*)\\r\\n/U", $content, $thumbUrl);  //通过正则式获取图片地址
 $img_src = $thumbUrl[1][0];  //将赋值给img_src
 $img_counter = count($thumbUrl[0]);  //一个src地址的计数器
-
 switch ($img_counter > 0) {
 case $allPics = 1:
 return $img_src;  //当找到一个src地址的时候，输出缩略图
@@ -150,7 +146,6 @@ default:
 return Typecho_Widget::widget('Widget_Options')->plugin('PostToSinaToutiao')->defaultimg;  //没找到(默认情况下)，不输出任何内容
 }
 }
-
 //记录日志
 function logInfo($msg)
 {
@@ -169,7 +164,6 @@ function logInfo($msg)
     file_put_contents($logFile, date('[Y-m-d H:i:s]: ') . $msg . PHP_EOL, FILE_APPEND);
     return $msg;
 }
-
 //读取日志
 function readlog(){
     $file = "/tmp/sync_weibo.log";
@@ -186,7 +180,6 @@ function readlog(){
     }
         
 }
-
 function content($content){
     $content = '##############">'.preg_replace("/!\[(.*)\]\[\d\]/U",'<img src="**************##############">',$content).'<img src="**************';//正则替换
     $str = preg_replace("/\s+\r/is", "\n", $content);//回车符是\r  
