@@ -1,3 +1,5 @@
+# 临近高三，暂时不会更新
+
 # Typecho的微博头条文章发布插件
 
 引用 easy-http---->[easy-http](https://github.com/duoshuo/easy-http)
