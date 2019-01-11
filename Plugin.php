@@ -1,7 +1,7 @@
 <?php
 if (!defined('__TYPECHO_ROOT_DIR__')) exit;
 /**
- * 当发布文章时,能够将文章的标题,链接和内容以头条文章的方式同步至你的微博。<a href="https://github.com/ShangJixin/Typecho-Plugin-PostToSinaToutiao">配置方法</a>。使用前请确定你的机器支持curl。
+ * 当发布文章时,能够将文章的标题,链接和内容以头条文章的方式同步至你的微博。<a href="https://github.com/jiyeme/PostToSinaToutiao">配置方法</a>。使用前请确定你的机器支持curl。
  * 
  * @package PostToSinaToutiao
  * @author 祭夜
