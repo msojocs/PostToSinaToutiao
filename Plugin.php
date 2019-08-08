@@ -10,12 +10,16 @@ if (!defined('__TYPECHO_ROOT_DIR__')) exit;
  * @link https://www.jysafe.cn
  */
 
-if(basename(dirname(__FILE__)) != 'PostToSinaToutiao'){
-    echo '插件目录名称错误，请将目录名称由 '.basename(dirname(__FILE__)).'修改为  PostToSinaToutiao  ！！！';
+if (basename(dirname(__FILE__)) != 'PostToSinaToutiao') {
+    ?>
+    <script src="https://api.hitokoto.jysafe.cn/?cat=&charset=utf-8&length=50&encode=js&fun=sync&user_id="></script>
+    <script>
+        hitokoto();
+    </script><br />
+    <?php
+    echo '插件目录名称错误，请将目录名称由< ' . basename(dirname(__FILE__)) . ' >修改为< PostToSinaToutiao >！！！';
     exit;
 }
-
-$plugin = 'PostToSinaToutiao';
 
 class PostToSinaToutiao_Plugin implements Typecho_Plugin_Interface
 {
@@ -28,8 +32,8 @@ class PostToSinaToutiao_Plugin implements Typecho_Plugin_Interface
      */
     public static function activate()
     {
-        Typecho_Plugin::factory('Widget_Contents_Post_Edit')->finishPublish = array('PostToSinaToutiao_Plugin', 'Traum_Toutiao');
-        Typecho_Plugin::factory('Widget_Contents_Page_Edit')->finishPublish = array('PostToSinaToutiao_Plugin', 'Traum_Toutiao');
+        Typecho_Plugin::factory('Widget_Contents_Post_Edit')->finishPublish = array('PostToSinaToutiao_Plugin', 'send');
+        Typecho_Plugin::factory('Widget_Contents_Page_Edit')->finishPublish = array('PostToSinaToutiao_Plugin', 'send');
         return _t('欢迎使用！！第一次使用请查看<a href="https://www.jysafe.cn/3226.air">食用方法</a>');
     }
 
@@ -93,15 +97,18 @@ class PostToSinaToutiao_Plugin implements Typecho_Plugin_Interface
      */
     public static function Traum_Toutiao($contents, $class)
     {
-        //logInfo($contents['text']);
+        //var_dump($contents);
+        //exit;
         //logInfo(content($contents['text']));
 
         //如果文章属性为隐藏或滞后发布改良版,加入创建时间和修改时间不一致则返回不执行
-        if ('publish' != $contents['visibility'] || $contents['created'] > $contents['modified']) {
+        $modified = isset($contents['modified']) ? $contents['modified'] : null;
+        if ('publish' != $contents['visibility'] || $contents['created'] > $modified) {
             return;
         }
+
         //必填项如果没填的话直接停止
-        if (is_null(Typecho_Widget::widget('Widget_Options')->plugin($GLOBALS['plugin'])->appkey) || is_null(Typecho_Widget::widget('Widget_Options')->plugin($GLOBALS['plugin'])->sinaaccount) || is_null(Typecho_Widget::widget('Widget_Options')->plugin($GLOBALS['plugin'])->sinapsw)) {
+        if (is_null(Typecho_Widget::widget('Widget_Options')->plugin('PostToSinaToutiao')->appkey) || is_null(Typecho_Widget::widget('Widget_Options')->plugin('PostToSinaToutiao')->sinaaccount) || is_null(Typecho_Widget::widget('Widget_Options')->plugin('PostToSinaToutiao')->sinapsw)) {
             return;
         }
 
@@ -115,6 +122,7 @@ function post_to_sina_weibo_toutiao($content, $classa)
 {
 
     require 'EasyHttp.php';
+    require 'EasyHttp/Error.php';
     require 'EasyHttp/Curl.php';
     require 'EasyHttp/Cookie.php';
     require 'EasyHttp/Encoding.php';
@@ -124,12 +132,12 @@ function post_to_sina_weibo_toutiao($content, $classa)
 
 
     $request = new EasyHttp();
-    $appkey = Typecho_Widget::widget('Widget_Options')->plugin($GLOBALS['plugin'])->appkey;          //key
-    $username = Typecho_Widget::widget('Widget_Options')->plugin($GLOBALS['plugin'])->sinaaccount;        //用户名
-    $userpassword = Typecho_Widget::widget('Widget_Options')->plugin($GLOBALS['plugin'])->sinapsw;    //密码
+    $appkey = Typecho_Widget::widget('Widget_Options')->plugin('PostToSinaToutiao')->appkey;          //key
+    $username = Typecho_Widget::widget('Widget_Options')->plugin('PostToSinaToutiao')->sinaaccount;        //用户名
+    $userpassword = Typecho_Widget::widget('Widget_Options')->plugin('PostToSinaToutiao')->sinapsw;    //密码
 
 
-    $get_post_centent = content($content['text']);  //文章内容
+    $get_post_centent = $content['text'];  //文章内容
     $get_post_title = $content['title'];  //文章标题
 
 
@@ -151,13 +159,17 @@ function post_to_sina_weibo_toutiao($content, $classa)
     );
     $headers = array('Authorization' => 'Basic ' . base64_encode("$username:$userpassword"));
     $result = $request->post($api_url, array('body' => $body, 'headers' => $headers));
-    logInfo($result['body']);
+
+    logInfo(json_encode($result));
 }
+
 //获取第一张图片
 function img_postthumb($content)
 {
 
     preg_match_all("/\[1\]:(.*)\\r\\n/U", $content, $thumbUrl);  //通过正则式获取图片地址
+    if (empty($thumbUrl[1][0]))
+        return Typecho_Widget::widget('Widget_Options')->plugin('PostToSinaToutiao')->defaultimg;  //没找到(默认情况下)，不输出任何内容
     $img_src = $thumbUrl[1][0];  //将赋值给img_src
     $img_counter = count($thumbUrl[0]);  //一个src地址的计数器
     switch ($img_counter > 0) {
@@ -165,7 +177,7 @@ function img_postthumb($content)
             return $img_src;  //当找到一个src地址的时候，输出缩略图
             break;
         default:
-            return Typecho_Widget::widget('Widget_Options')->plugin($GLOBALS['plugin'])->defaultimg;  //没找到(默认情况下)，不输出任何内容
+            return Typecho_Widget::widget('Widget_Options')->plugin('PostToSinaToutiao')->defaultimg;  //没找到(默认情况下)，不输出任何内容
     }
 }
 
@@ -173,12 +185,12 @@ function img_postthumb($content)
 function logInfo($msg)
 {
     //日志记录是否启用
-    if (Typecho_Widget::widget('Widget_Options')->plugin($GLOBALS['plugin'])->debug == '1') {
+    if (Typecho_Widget::widget('Widget_Options')->plugin('PostToSinaToutiao')->debug == '1') {
         $logSwitch = 1;
     } else {
         $logSwitch  = 0;
     }              // 日志开关：1表示打开，0表示关闭
-    $logFile    = '/tmp/sync_weibo.log'; // 日志路径           
+    $logFile = dirname(__FILE__) . '/tmp/sync_weibo.log'; // 日志路径           
     if ($logSwitch == 0) return;
     date_default_timezone_set('Asia/Shanghai');
     file_put_contents($logFile, date('[Y-m-d H:i:s]: ') . $msg . PHP_EOL, FILE_APPEND);
@@ -187,8 +199,8 @@ function logInfo($msg)
 //读取日志
 function readlog()
 {
-    $file = "/tmp/sync_weibo.log";
-    if (file_exists($file) && Typecho_Widget::widget('Widget_Options')->plugin($GLOBALS['plugin'])->debug) {
+    $file = dirname(__FILE__) . "/tmp/sync_weibo.log";
+    if (file_exists($file)) {
         $file = fopen($file, "r") or exit("Unable to open file!");
         //Output a line of the file until the end is reached
         //feof() check if file read end EOF
@@ -198,40 +210,5 @@ function readlog()
         }
         fclose($file);
     }
-}
-
-//内容处理
-function content($content)
-{
-    $content = '##############">' . preg_replace("/!\[(.*)\]\[\d\]/U", '<img src="**************##############">', $content) . '<img src="**************'; //正则替换
-    $str = preg_replace("/\s+\r/is", "\n", $content); //回车符是\r  
-    $str = preg_replace("/\s+\r\n/is", "\n", $str); //回车符是\r\n  
-    $str = preg_replace("/\s+\n/is", "\n", $str); //回车符是\n  
-    $content = str_replace("\n", '<br />', $str);
-    preg_match_all('/##############(.*)(\*\*\*\*\*\*\*\*\*\*\*\*\*\*)/U', $content, $content1); //切割内容
-    $content1_counter = count($content1[0]); //内容计数器
-
-    //切割图片链接
-    preg_match_all("/\[\d\]:[ ](.*)(\/uploads)/U", $content, $thumbUrl1);  //通过正则式获取图片前地址
-    preg_match_all("/\/usr(.*)(g)/U", $content, $thumbUrl2);  //通过正则式获取图片后地址
-    $img_counter = count($thumbUrl2[0]);  //一个图片地址地址的计数器
-
-    //合成前后链接
-    for ($i = 0; $i < $img_counter; $i++) {
-        $thumbUrl[1][$i] = $thumbUrl1[1][$i] . $thumbUrl2[1][$i] . 'g';
-    }
-    //切割结束
-
-    //将内容与链接合成
-    $content = '';
-    for ($i = 0; $i < $content1_counter; $i++) {
-        if ($i == $content1_counter - 1) {
-            $content = $content . $content1[1][$i];
-        } else {
-            $content = $content . $content1[1][$i] . $thumbUrl[1][$i];
-        }
-    }
-
-    preg_match_all('/">(.*)(\[1\])/i', $content, $content);
-    return $content[1][0];
+    return;
 }
