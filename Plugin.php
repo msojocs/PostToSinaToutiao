@@ -32,8 +32,8 @@ class PostToSinaToutiao_Plugin implements Typecho_Plugin_Interface
      */
     public static function activate()
     {
-        Typecho_Plugin::factory('Widget_Contents_Post_Edit')->finishPublish = array('PostToSinaToutiao_Plugin', 'send');
-        Typecho_Plugin::factory('Widget_Contents_Page_Edit')->finishPublish = array('PostToSinaToutiao_Plugin', 'send');
+        Typecho_Plugin::factory('Widget_Contents_Post_Edit')->finishPublish = array('PostToSinaToutiao_Plugin', 'Traum_Toutiao');
+        Typecho_Plugin::factory('Widget_Contents_Page_Edit')->finishPublish = array('PostToSinaToutiao_Plugin', 'Traum_Toutiao');
         return _t('欢迎使用！！第一次使用请查看<a href="https://www.jysafe.cn/3226.air">食用方法</a>');
     }
 
@@ -75,7 +75,7 @@ class PostToSinaToutiao_Plugin implements Typecho_Plugin_Interface
         $form->addInput($appkey);
         $sinaaccount = new Typecho_Widget_Helper_Form_Element_Text('sinaaccount', null, '', _t('新浪微博账号'), '新浪微博账号');
         $form->addInput($sinaaccount);
-        $sinapsw = new Typecho_Widget_Helper_Form_Element_Text('sinapsw', null, '', _t('新浪微博密码'), '日志：<br />' . readlog().'<script src="https://api.hitokoto.jysafe.cn/?cat=&charset=utf-8&length=50&encode=js&fun=sync&user_id="></script><script>hitokoto();</script><br />');
+        $sinapsw = new Typecho_Widget_Helper_Form_Element_Text('sinapsw', null, '', _t('新浪微博密码'), '日志：<br />' . readlog() .'<br />');
         $form->addInput($sinapsw);
     }
 
@@ -106,11 +106,15 @@ class PostToSinaToutiao_Plugin implements Typecho_Plugin_Interface
         if ('publish' != $contents['visibility'] || $contents['created'] > $modified) {
             return;
         }
+        
+        //logInfo('first');
 
         //必填项如果没填的话直接停止
         if (is_null(Typecho_Widget::widget('Widget_Options')->plugin('PostToSinaToutiao')->appkey) || is_null(Typecho_Widget::widget('Widget_Options')->plugin('PostToSinaToutiao')->sinaaccount) || is_null(Typecho_Widget::widget('Widget_Options')->plugin('PostToSinaToutiao')->sinapsw)) {
             return;
         }
+
+        //logInfo('Second');
 
         //发布文章
         post_to_sina_weibo_toutiao($contents, $class);
@@ -148,7 +152,7 @@ function post_to_sina_weibo_toutiao($content, $classa)
     $tupianurl = img_postthumb($content['text']);
 
 
-    $api_url = 'https://api.weibo.com/proxy/article/publish.json';
+    $api_url = 'http://api.weibo.com/proxy/article/publish.json';
     $body = array(
         'title'   => strip_tags($get_post_title),         //头条的标题
         'content' => $get_post_centent . ' <br>原文地址:' . $classa->permalink,    //头条的正文
@@ -161,6 +165,8 @@ function post_to_sina_weibo_toutiao($content, $classa)
     $result = $request->post($api_url, array('body' => $body, 'headers' => $headers));
 
     logInfo(json_encode($result));
+
+    return;
 }
 
 //获取第一张图片
@@ -186,15 +192,13 @@ function logInfo($msg)
 {
     //日志记录是否启用
     if (Typecho_Widget::widget('Widget_Options')->plugin('PostToSinaToutiao')->debug == '1') {
-        $logSwitch = 1;
+        $logFile = dirname(__FILE__) . '/tmp/sync_weibo.log'; // 日志路径
+        date_default_timezone_set('Asia/Shanghai');
+        file_put_contents($logFile, date('[Y-m-d H:i:s]: ') . $msg . PHP_EOL, FILE_APPEND);
+        return $msg;
     } else {
-        $logSwitch  = 0;
+        return;
     }              // 日志开关：1表示打开，0表示关闭
-    $logFile = dirname(__FILE__) . '/tmp/sync_weibo.log'; // 日志路径           
-    if ($logSwitch == 0) return;
-    date_default_timezone_set('Asia/Shanghai');
-    file_put_contents($logFile, date('[Y-m-d H:i:s]: ') . $msg . PHP_EOL, FILE_APPEND);
-    return $msg;
 }
 
 //读取日志
@@ -205,11 +209,13 @@ function readlog()
         $file = fopen($file, "r") or exit("Unable to open file!");
         //Output a line of the file until the end is reached
         //feof() check if file read end EOF
+        $log ='';
         while (!feof($file)) {
             //fgets() Read row by row
-            return fgets($file) . "<br />";
+            $log .= fgets($file) . "<br />";
         }
         fclose($file);
+        return $log;
     }
     return;
 }
