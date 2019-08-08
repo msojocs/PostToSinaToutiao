@@ -5,8 +5,11 @@
 引用 easy-http---->[easy-http](https://github.com/duoshuo/easy-http)
 
 
-插件版本：1.0.4
+插件版本：1.0.5
 # 更新记录：
+>1.0.5
+修复一个严重bug
+
 >1.0.4
 似乎真正修复了500错误
 

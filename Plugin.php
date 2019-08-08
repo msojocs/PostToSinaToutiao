@@ -6,7 +6,7 @@ if (!defined('__TYPECHO_ROOT_DIR__')) exit;
  * 
  * @package PostToSinaToutiao
  * @author 祭夜
- * @version 1.0.4
+ * @version 1.0.5
  * @link https://www.jysafe.cn
  */
 
@@ -75,7 +75,7 @@ class PostToSinaToutiao_Plugin implements Typecho_Plugin_Interface
         $form->addInput($appkey);
         $sinaaccount = new Typecho_Widget_Helper_Form_Element_Text('sinaaccount', null, '', _t('新浪微博账号'), '新浪微博账号');
         $form->addInput($sinaaccount);
-        $sinapsw = new Typecho_Widget_Helper_Form_Element_Text('sinapsw', null, '', _t('新浪微博密码'), '日志：<br />' . readlog() .'<br />');
+        $sinapsw = new Typecho_Widget_Helper_Form_Element_Text('sinapsw', null, '', _t('新浪微博密码'), '<h2>日志：</h2>' . readlog() .'<br />');
         $form->addInput($sinapsw);
     }
 
@@ -175,7 +175,7 @@ function img_postthumb($content)
 
     preg_match_all("/\[1\]:(.*)\\r\\n/U", $content, $thumbUrl);  //通过正则式获取图片地址
     if (empty($thumbUrl[1][0]))
-        return Typecho_Widget::widget('Widget_Options')->plugin('PostToSinaToutiao')->defaultimg;  //没找到(默认情况下)，不输出任何内容
+        return Typecho_Widget::widget('Widget_Options')->plugin('PostToSinaToutiao')->defaultimg;  //没找到(默认情况下)
     $img_src = $thumbUrl[1][0];  //将赋值给img_src
     $img_counter = count($thumbUrl[0]);  //一个src地址的计数器
     switch ($img_counter > 0) {
@@ -183,7 +183,7 @@ function img_postthumb($content)
             return $img_src;  //当找到一个src地址的时候，输出缩略图
             break;
         default:
-            return Typecho_Widget::widget('Widget_Options')->plugin('PostToSinaToutiao')->defaultimg;  //没找到(默认情况下)，不输出任何内容
+            return Typecho_Widget::widget('Widget_Options')->plugin('PostToSinaToutiao')->defaultimg;  //没找到(默认情况下)
     }
 }
 
