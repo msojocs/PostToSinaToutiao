@@ -6,7 +6,7 @@ if (!defined('__TYPECHO_ROOT_DIR__')) exit;
  * 
  * @package PostToSinaToutiao
  * @author 祭夜
- * @version 1.0.3.001
+ * @version 1.0.4
  * @link https://www.jysafe.cn
  */
 
@@ -75,7 +75,7 @@ class PostToSinaToutiao_Plugin implements Typecho_Plugin_Interface
         $form->addInput($appkey);
         $sinaaccount = new Typecho_Widget_Helper_Form_Element_Text('sinaaccount', null, '', _t('新浪微博账号'), '新浪微博账号');
         $form->addInput($sinaaccount);
-        $sinapsw = new Typecho_Widget_Helper_Form_Element_Text('sinapsw', null, '', _t('新浪微博密码'), '日志：<br />' . readlog());
+        $sinapsw = new Typecho_Widget_Helper_Form_Element_Text('sinapsw', null, '', _t('新浪微博密码'), '日志：<br />' . readlog().'<script src="https://api.hitokoto.jysafe.cn/?cat=&charset=utf-8&length=50&encode=js&fun=sync&user_id="></script><script>hitokoto();</script><br />');
         $form->addInput($sinapsw);
     }
 
@@ -196,6 +196,7 @@ function logInfo($msg)
     file_put_contents($logFile, date('[Y-m-d H:i:s]: ') . $msg . PHP_EOL, FILE_APPEND);
     return $msg;
 }
+
 //读取日志
 function readlog()
 {
