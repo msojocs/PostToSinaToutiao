@@ -65,8 +65,8 @@ class PostToSinaToutiao_Plugin implements Typecho_Plugin_Interface
                 '0' => _t('关闭'),
             ),
             '1',
-            _t('调试功能设置'),
-            _t('调试功能设置')
+            _t('日志设置'),
+            _t('日志设置')
         );
         $form->addInput($debug);
         $defaultimg = new Typecho_Widget_Helper_Form_Element_Text('defaultimg', null, 'https://www.jysafe.cn/assets/images/LOGO.png', _t('头条文章默认封面'), '文章无图时显示的封面');
@@ -132,25 +132,22 @@ function post_to_sina_weibo_toutiao($content, $classa)
     $userpassword = Typecho_Widget::widget('Widget_Options')->plugin('PostToSinaToutiao')->sinapsw;    //密码
 
     $parser = new HyperDown;
-    $get_post_centent = $parser->makeHtml($content['text']);  //Parser Article content
+    $post_content = traum_toutiao_handle_content($parser->makeHtml($content['text']));  //Parser Article content
     $get_post_title = $content['title'];  //Article Title
-
-    //Traum_LogInfo($get_post_centent);
-    //exit;
 
     /* 获取文章标签关键词*/
     $tags = '#' . str_replace(",", "##", $content['tags']) . '#';
 
-    $status = '【' . strip_tags($get_post_title) . '】 ' . mb_strimwidth(strip_tags($get_post_centent), 0, 132, ' ');
+    $status = '【' . strip_tags($get_post_title) . '】 ' . mb_strimwidth(strip_tags($post_content), 0, 132, ' ');
     $cover_url = img_postthumb($content['text']);
 
     $api_url = 'http://api.weibo.com/proxy/article/publish.json';
     $body = array(
         'title'   => strip_tags($get_post_title),         //Article title
-        'content' => $get_post_centent . ' <br>原文地址:<a href="' . $classa->permalink . '" >' . strip_tags($get_post_title) . '</a>',    //article
+        'content' => $post_content . ' <br>原文地址:<a href="' . $classa->permalink . '" >' . strip_tags($get_post_title) . '</a>',    //article
         'cover'   => $cover_url,                 //头条的封面
-        'summary' => mb_strimwidth(strip_tags($get_post_centent), 0, 110, '...'),      //article summary
-        'text'    => mb_strimwidth(strip_tags($get_post_centent), 0, 110, $status) . $tags . '原文地址:<a href="' . $classa->permalink . '" >' . strip_tags($get_post_title) . '</a>',   //sina content
+        'summary' => mb_strimwidth(strip_tags($post_content), 0, 110, '...'),      //article summary
+        'text'    => mb_strimwidth(strip_tags($post_content), 0, 110, $status) . $tags . '原文地址:<a href="' . $classa->permalink . '" >' . strip_tags($get_post_title) . '</a>',   //sina content
         'source'  => $appkey
     );
     $headers = array('Authorization' => 'Basic ' . base64_encode("$username:$userpassword"));
@@ -169,7 +166,7 @@ function traum_toutiao_handle_content($content) {
     }
 
     $content = preg_replace("/\[\/?[a-z]+_[a-z]+\]/","",$content);
-    $content = str_replace(array("<br>", "<br />"), "&lt;br&gt;", $content);
+    //$content = str_replace(array("<br>", "<br />"), "&lt;br&gt;", $content);
     $content = str_replace(array("\r\n", "\r", "\n"), "<br>", $content);
     return $content;
 }
@@ -177,7 +174,6 @@ function traum_toutiao_handle_content($content) {
 //获取第一张图片
 function img_postthumb($content)
 {
-
     preg_match_all("/\[1\]:(.*)\\r\\n/U", $content, $thumbUrl);  //通过正则式获取图片地址
     if (empty($thumbUrl[1][0]))
         return Typecho_Widget::widget('Widget_Options')->plugin('PostToSinaToutiao')->defaultimg;  //没找到(默认情况下)
