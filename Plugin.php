@@ -6,7 +6,7 @@ if (!defined('__TYPECHO_ROOT_DIR__')) exit;
  * 
  * @package PostToSinaToutiao
  * @author 祭夜
- * @version 1.0.5
+ * @version 1.0.6
  * @link https://www.jysafe.cn
  */
 
@@ -75,7 +75,7 @@ class PostToSinaToutiao_Plugin implements Typecho_Plugin_Interface
         $form->addInput($appkey);
         $sinaaccount = new Typecho_Widget_Helper_Form_Element_Text('sinaaccount', null, '', _t('新浪微博账号'), '新浪微博账号');
         $form->addInput($sinaaccount);
-        $sinapsw = new Typecho_Widget_Helper_Form_Element_Text('sinapsw', null, '', _t('新浪微博密码'), '<h2>日志：</h2>' . readlog() .'<br />');
+        $sinapsw = new Typecho_Widget_Helper_Form_Element_Password('sinapsw', null, '', _t('新浪微博密码'), '<h2>日志：</h2>' . Traum_ReadLog() . '<br />');
         $form->addInput($sinapsw);
     }
 
@@ -97,24 +97,16 @@ class PostToSinaToutiao_Plugin implements Typecho_Plugin_Interface
      */
     public static function Traum_Toutiao($contents, $class)
     {
-        //var_dump($contents);
-        //exit;
-        //logInfo(content($contents['text']));
-
         //如果文章属性为隐藏或滞后发布改良版,加入创建时间和修改时间不一致则返回不执行
         $modified = isset($contents['modified']) ? $contents['modified'] : null;
         if ('publish' != $contents['visibility'] || $contents['created'] > $modified) {
             return;
         }
-        
-        //logInfo('first');
 
         //必填项如果没填的话直接停止
         if (is_null(Typecho_Widget::widget('Widget_Options')->plugin('PostToSinaToutiao')->appkey) || is_null(Typecho_Widget::widget('Widget_Options')->plugin('PostToSinaToutiao')->sinaaccount) || is_null(Typecho_Widget::widget('Widget_Options')->plugin('PostToSinaToutiao')->sinapsw)) {
             return;
         }
-
-        //logInfo('Second');
 
         //发布文章
         post_to_sina_weibo_toutiao($contents, $class);
@@ -124,7 +116,6 @@ class PostToSinaToutiao_Plugin implements Typecho_Plugin_Interface
 /*****************************************/
 function post_to_sina_weibo_toutiao($content, $classa)
 {
-
     require 'EasyHttp.php';
     require 'EasyHttp/Error.php';
     require 'EasyHttp/Curl.php';
@@ -134,39 +125,53 @@ function post_to_sina_weibo_toutiao($content, $classa)
     require 'EasyHttp/Proxy.php';
     require 'EasyHttp/Streams.php';
 
-
+    //get setting info
     $request = new EasyHttp();
     $appkey = Typecho_Widget::widget('Widget_Options')->plugin('PostToSinaToutiao')->appkey;          //key
     $username = Typecho_Widget::widget('Widget_Options')->plugin('PostToSinaToutiao')->sinaaccount;        //用户名
     $userpassword = Typecho_Widget::widget('Widget_Options')->plugin('PostToSinaToutiao')->sinapsw;    //密码
 
+    $parser = new HyperDown;
+    $get_post_centent = $parser->makeHtml($content['text']);  //Parser Article content
+    $get_post_title = $content['title'];  //Article Title
 
-    $get_post_centent = $content['text'];  //文章内容
-    $get_post_title = $content['title'];  //文章标题
-
+    //Traum_LogInfo($get_post_centent);
+    //exit;
 
     /* 获取文章标签关键词*/
     $tags = '#' . str_replace(",", "##", $content['tags']) . '#';
 
     $status = '【' . strip_tags($get_post_title) . '】 ' . mb_strimwidth(strip_tags($get_post_centent), 0, 132, ' ');
-    $tupianurl = img_postthumb($content['text']);
-
+    $cover_url = img_postthumb($content['text']);
 
     $api_url = 'http://api.weibo.com/proxy/article/publish.json';
     $body = array(
-        'title'   => strip_tags($get_post_title),         //头条的标题
-        'content' => $get_post_centent . ' <br>原文地址:' . $classa->permalink,    //头条的正文
-        'cover'   => $tupianurl,                 //头条的封面
-        'summary' => mb_strimwidth(strip_tags($get_post_centent), 0, 110, '...'),      //头条的导语
-        'text'    => mb_strimwidth(strip_tags($get_post_centent), 0, 110, $status) . $tags . '原文地址:' . $classa->permalink,    //微博的内容
+        'title'   => strip_tags($get_post_title),         //Article title
+        'content' => $get_post_centent . ' <br>原文地址:<a href="' . $classa->permalink . '" >' . strip_tags($get_post_title) . '</a>',    //article
+        'cover'   => $cover_url,                 //头条的封面
+        'summary' => mb_strimwidth(strip_tags($get_post_centent), 0, 110, '...'),      //article summary
+        'text'    => mb_strimwidth(strip_tags($get_post_centent), 0, 110, $status) . $tags . '原文地址:<a href="' . $classa->permalink . '" >' . strip_tags($get_post_title) . '</a>',   //sina content
         'source'  => $appkey
     );
     $headers = array('Authorization' => 'Basic ' . base64_encode("$username:$userpassword"));
     $result = $request->post($api_url, array('body' => $body, 'headers' => $headers));
 
-    logInfo(json_encode($result));
+    Traum_LogInfo(json_encode($result));
 
     return;
+}
+
+//处理content内容
+function traum_toutiao_handle_content($content) {
+    if (!strpos($content, "<h1>") && strpos($content, "<h2>") && (strpos($content, "<h3>") || strpos($content, "<h4>") || strpos($content, "<h5>") ||strpos($content, "<h6>"))) {
+        $content = str_replace("<h2>", "<h1>", $content);
+        $content = str_replace("</h2>", "</h1>", $content);
+    }
+
+    $content = preg_replace("/\[\/?[a-z]+_[a-z]+\]/","",$content);
+    $content = str_replace(array("<br>", "<br />"), "&lt;br&gt;", $content);
+    $content = str_replace(array("\r\n", "\r", "\n"), "<br>", $content);
+    return $content;
 }
 
 //获取第一张图片
@@ -187,10 +192,9 @@ function img_postthumb($content)
     }
 }
 
-//记录日志
-function logInfo($msg)
+//log
+function Traum_LogInfo($msg)
 {
-    //日志记录是否启用
     if (Typecho_Widget::widget('Widget_Options')->plugin('PostToSinaToutiao')->debug == '1') {
         $logFile = dirname(__FILE__) . '/tmp/sync_weibo.log'; // 日志路径
         date_default_timezone_set('Asia/Shanghai');
@@ -201,15 +205,15 @@ function logInfo($msg)
     }              // 日志开关：1表示打开，0表示关闭
 }
 
-//读取日志
-function readlog()
+//Traum_ReadLog
+function Traum_ReadLog()
 {
     $file = dirname(__FILE__) . "/tmp/sync_weibo.log";
     if (file_exists($file)) {
         $file = fopen($file, "r") or exit("Unable to open file!");
         //Output a line of the file until the end is reached
         //feof() check if file read end EOF
-        $log ='';
+        $log = '';
         while (!feof($file)) {
             //fgets() Read row by row
             $log .= fgets($file) . "<br />";

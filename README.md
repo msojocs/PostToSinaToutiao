@@ -5,8 +5,12 @@
 引用 easy-http---->[easy-http](https://github.com/duoshuo/easy-http)
 
 
-插件版本：1.0.5
+插件版本：1.0.6
 # 更新记录：
+
+>1.0.6
+语法解析支持！
+
 >1.0.5
 修复一个严重bug
 
